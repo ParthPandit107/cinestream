@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: cinestream-backend
+    env: node
+    plan: free
+    buildCommand: echo "No build required"
+    startCommand: node server.js
+    envVars:
+      - key: TMDB_API_KEY
+        value: 49699d061436b6db5a0bc503f5aab402
+      - key: RENDER_EXTERNAL_URL
+        value: https://cinestream-backend.onrender.com

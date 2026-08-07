@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <title>CINESTREAM — Movies & TV Shows Discovery</title>
+
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            display: ['Outfit', 'Inter', 'sans-serif'],
+            mono: ['ui-monospace', 'monospace']
+          },
+          colors: {
+            background: '#000000',
+            surface: '#0a0a0a',
+            'surface-card': '#121212',
+            border: '#262626'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    html, body {
+      background-color: #000000;
+      color: #ffffff;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      overflow-x: hidden !important;
+      width: 100%;
+      max-width: 100vw;
+      margin: 0;
+      padding: 0;
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #000000; }
+    ::-webkit-scrollbar-thumb { background: #262626; }
+    .scrollbar-none::-webkit-scrollbar { display: none; }
+    
+    /* Original Full Color Poster Treatment */
+    .duotone-poster {
+      filter: none;
+      transition: transform 0.4s ease, filter 0.4s ease;
+    }
+    .group:hover .duotone-poster {
+      transform: scale(1.03);
+    }
+    .min-touch-target {
+      min-width: 44px;
+      min-height: 44px;
+    }
+  </style>
+</head>
+<body class="bg-black text-white antialiased min-h-screen flex flex-col overflow-x-hidden w-full max-w-full">
+
+  <!-- Header / Navigation -->
+  <header class="sticky top-0 z-50 w-full border-b border-border bg-black/95 backdrop-blur-md overflow-hidden">
+    <div class="max-w-7xl mx-auto flex h-16 sm:h-20 items-center justify-between px-3 sm:px-8 gap-2">
+      
+      <!-- Brand Logo & Mobile Menu Toggle -->
+      <div class="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+        <button onclick="toggleMobileNav()" class="lg:hidden border border-border bg-surface p-2.5 text-white hover:border-white min-touch-target flex items-center justify-center" title="Toggle Navigation">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </button>
+        <a href="#" onclick="navigateTo('/'); return false;" class="flex items-center gap-2 sm:gap-3">
+          <div class="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center bg-white text-black font-display font-black text-xl sm:text-2xl tracking-tighter">C</div>
+          <span class="font-display font-black text-lg sm:text-2xl tracking-wider text-white uppercase truncate">CINESTREAM</span>
+        </a>
+      </div>
+
+      <!-- Desktop Navigation Links -->
+      <nav class="hidden lg:flex items-center gap-6 text-xs font-mono tracking-widest">
+        <button onclick="navigateTo('/')" class="hover:text-neutral-400 uppercase py-2">Discover</button>
+        <button onclick="navigateTo('/movies')" class="hover:text-neutral-400 uppercase py-2">Movies</button>
+        <button onclick="navigateTo('/tv')" class="hover:text-neutral-400 uppercase py-2">TV Shows</button>
+        <button onclick="navigateTo('/my-list')" class="hover:text-neutral-400 uppercase py-2">My List</button>
+      </nav>
+
+      <!-- Quick Search Bar & Random Selector -->
+      <div class="flex items-center gap-2 sm:gap-4 flex-1 max-w-[200px] sm:max-w-xs xl:max-w-md justify-end min-w-0">
+        <div class="flex-1 min-w-0">
+          <input type="text" id="quickSearchInput" onkeydown="if(event.key==='Enter') doSearch(this.value)" placeholder="Search movies & TV..." class="w-full border border-border bg-surface px-3 py-2 text-xs text-white placeholder-neutral-500 focus:border-white focus:outline-none font-mono truncate" />
+        </div>
+        <button onclick="triggerRandomMedia()" title="Random Choice" class="flex-shrink-0 border border-border bg-surface px-2.5 py-2 text-neutral-300 hover:border-white hover:text-white font-mono text-[11px] sm:text-xs uppercase flex items-center gap-1.5 min-touch-target justify-center">
+          <span>🎲</span> <span class="hidden sm:inline">Random</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Slide-Down Navigation Drawer -->
+    <div id="mobileNavDrawer" class="hidden lg:hidden border-t border-border bg-surface px-4 py-3 space-y-2 font-mono text-xs">
+      <button onclick="toggleMobileNav(); navigateTo('/');" class="block w-full text-left py-3 border-b border-neutral-900 hover:text-white text-neutral-300 uppercase flex items-center gap-2"><span class="text-sm">🏠</span> Discover</button>
+      <button onclick="toggleMobileNav(); navigateTo('/movies');" class="block w-full text-left py-3 border-b border-neutral-900 hover:text-white text-neutral-300 uppercase flex items-center gap-2"><span class="text-sm">🎬</span> Movies Catalog</button>
+      <button onclick="toggleMobileNav(); navigateTo('/tv');" class="block w-full text-left py-3 border-b border-neutral-900 hover:text-white text-neutral-300 uppercase flex items-center gap-2"><span class="text-sm">📺</span> TV Shows Catalog</button>
+      <button onclick="toggleMobileNav(); navigateTo('/my-list');" class="block w-full text-left py-3 hover:text-white text-neutral-300 uppercase flex items-center gap-2"><span class="text-sm">⭐</span> My List & Ratings</button>
+    </div>
+  </header>
+
+  <!-- Reusable SisterSitePromo Top Banner (Placed above main app so loading content never pushes it off screen) -->
+  <aside class="max-w-7xl mx-auto px-3 sm:px-6 pt-4 sm:pt-6 w-full">
+    <div id="sisterSitePromoContainer"></div>
+  </aside>
+
+  <!-- Main View Router Container -->
+  <main id="app" class="flex-1 max-w-7xl mx-auto w-full px-3 sm:px-6 py-6 sm:py-10 space-y-10 overflow-x-hidden"></main>
+
+  <!-- Footer -->
+  <footer class="border-t border-border bg-black py-8 text-neutral-500 text-xs font-mono mt-auto overflow-hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="flex h-6 w-6 items-center justify-center bg-white text-black font-display font-black text-xs">C</div>
+        <span class="font-display font-bold text-white tracking-widest uppercase">CINESTREAM</span>
+        <span class="text-[10px] text-neutral-600 border-l border-neutral-800 pl-3">SISTER SITE TO ANISTREAM</span>
+      </div>
+      <div>CINESTREAM CATALOG &mdash; TMDB POWERED</div>
+    </div>
+  </footer>
+
+  <script>
+    // Dynamically resolve API_BASE to local relative path when running on localhost or custom domain
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const API_BASE = window.CINESTREAM_API_URL || (isLocalhost ? '' : 'https://cinestream-backend.onrender.com');
+    const SISTER_SITE_URL = window.SISTER_SITE_URL || 'https://anistream.wstream.workers.dev';
+    const SISTER_SITE_NAME = window.SISTER_SITE_NAME || 'AniStream';
+
+    const EMBED_PROVIDERS = [
+      {
+        id: '1',
+        name: 'Server 1',
+        getMovieUrl: (id) => `https://embed.streamxtv.tech/embed/${id}`,
+        getTvUrl: (id, s, e) => `https://embed.streamxtv.tech/embed/${id}/${s}/${e}`
+      },
+      {
+        id: '2',
+        name: 'Server 2',
+        getMovieUrl: (id) => `https://vidsrc.to/embed/movie/${id}`,
+        getTvUrl: (id, s, e) => `https://vidsrc.to/embed/tv/${id}/${s}/${e}`
+      },
+      {
+        id: '3',
+        name: 'Server 3',
+        getMovieUrl: (id) => `https://www.2embed.cc/embed/${id}`,
+        getTvUrl: (id, s, e) => `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}`
+      },
+      {
+        id: '4',
+        name: 'Server 4',
+        getMovieUrl: (id) => `https://player.autoembed.cc/embed/movie/${id}`,
+        getTvUrl: (id, s, e) => `https://player.autoembed.cc/embed/tv/${id}/${s}/${e}`
+      },
+      {
+        id: '5',
+        name: 'Server 5',
+        getMovieUrl: (id) => `https://tryembed.us.cc/embed/movie/${id}`,
+        getTvUrl: (id, s, e) => `https://tryembed.us.cc/embed/tv/${id}/${s}/${e}`
+      }
+    ];
+
+    let state = {
+      route: '/',
+      mediaType: 'movie',
+      mediaId: null,
+      seasonNum: 1,
+      episodeNum: 1,
+      audio: 'sub',
+      server: '1',
+      query: '',
+      genre: 'All',
+      year: 'All',
+      sortBy: 'popularity',
+      page: 1,
+      searchResults: [],
+      visibleCount: 24,
+      currentSlide: 0,
+      heroSlides: [],
+      slideInterval: null,
+      commentPollInterval: null,
+      watchTimer: null
+    };
+
+    function toggleMobileNav() {
+      const drawer = document.getElementById('mobileNavDrawer');
+      if (drawer) drawer.classList.toggle('hidden');
+    }
+
+    async function fetchWithRetry(url, maxRetries = 5, delayMs = 3000) {
+      for (let i = 0; i < maxRetries; i++) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 12000);
+          const res = await fetch(url, { signal: controller.signal });
+          clearTimeout(timeoutId);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.success) return data;
+          }
+        } catch (e) {
+          console.warn(`[CINESTREAM] Fetch retry ${i + 1} for ${url}...`);
+        }
+        await new Promise(r => setTimeout(r, delayMs));
+      }
+      throw new Error('Server connection timeout');
+    }
+
+    /* Continue Watching Store */
+    function getContinueWatching() {
+      try { return JSON.parse(localStorage.getItem('cinestream_continue_watching') || '[]'); } catch(e) { return []; }
+    }
+    function saveContinueWatching(item) {
+      const list = getContinueWatching().filter(i => !(String(i.id) === String(item.id) && i.type === item.type));
+      list.unshift({ ...item, updatedAt: Date.now() });
+      localStorage.setItem('cinestream_continue_watching', JSON.stringify(list.slice(0, 20)));
+    }
+    function removeFromContinueWatching(id, type) {
+      const list = getContinueWatching().filter(i => !(String(i.id) === String(id) && i.type === type));
+      localStorage.setItem('cinestream_continue_watching', JSON.stringify(list));
+    }
+
+    /* Watched Episodes Store */
+    function getWatchedEpisodes() {
+      try { return JSON.parse(localStorage.getItem('cinestream_watched_episodes') || '[]'); } catch(e) { return []; }
+    }
+    function markEpisodeAsWatched(tvId, seasonNum, epNum) {
+      const validSeason = Math.max(1, parseInt(seasonNum || 1, 10));
+      const key = `${tvId}_s${validSeason}_e${epNum}`;
+      const list = getWatchedEpisodes();
+      if (!list.includes(key)) {
+        list.push(key);
+        localStorage.setItem('cinestream_watched_episodes', JSON.stringify(list));
+      }
+    }
+    function isEpisodeWatched(tvId, seasonNum, epNum) {
+      const validSeason = Math.max(1, parseInt(seasonNum || 1, 10));
+      const key = `${tvId}_s${validSeason}_e${epNum}`;
+      return getWatchedEpisodes().includes(key);
+    }
+
+    /* My List Store */
+    function getMyList() {
+      try { return JSON.parse(localStorage.getItem('cinestream_my_list') || '[]'); } catch(e) { return []; }
+    }
+    function isMediaInMyList(id, type) {
+      return getMyList().some(i => String(i.id) === String(id) && i.type === type);
+    }
+    function saveToMyList(item) {
+      const list = getMyList().filter(i => !(String(i.id) === String(item.id) && i.type === item.type));
+      list.unshift({ ...item, addedAt: Date.now() });
+      localStorage.setItem('cinestream_my_list', JSON.stringify(list));
+    }
+    function removeFromMyList(id, type) {
+      const list = getMyList().filter(i => !(String(i.id) === String(id) && i.type === type));
+      localStorage.setItem('cinestream_my_list', JSON.stringify(list));
+    }
+
+    async function fetchCommentsFromAPI(targetKey) {
+      try {
+        const res = await fetch(`${API_BASE}/api/comments?targetKey=${encodeURIComponent(targetKey)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.success) return data.data || [];
+        }
+      } catch (e) {}
+      return [];
+    }
+
+    async function submitCommentToAPI(targetKey, username, text, parentId = null, isSpoiler = false) {
+      try {
+        const res = await fetch(`${API_BASE}/api/comments?targetKey=${encodeURIComponent(targetKey)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, text, parentId, isSpoiler })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          return data && data.success;
+        }
+      } catch (e) {}
+      return false;
+    }
+
+    async function voteCommentOnAPI(commentId, voteType, targetKey) {
+      try {
+        await fetch(`${API_BASE}/api/comments/${commentId}/vote`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: voteType })
+        });
+        refreshCommentsSection(targetKey);
+      } catch (e) {}
+    }
+
+    function dismissSisterSitePromo() {
+      const container = document.getElementById('sisterSitePromoContainer');
+      if (container) {
+        container.style.display = 'none';
+        container.innerHTML = '';
+      }
+    }
+
+    function renderSisterSitePromoHTML() {
+      try {
+        localStorage.removeItem('cinestream_dismiss_promo');
+        sessionStorage.removeItem('cinestream_dismiss_promo');
+      } catch(e){}
+
+      return `
+        <div id="sisterPromoCard" class="relative border border-border bg-neutral-950 p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-xs shadow-xl">
+          <button onclick="dismissSisterSitePromo()" title="Dismiss Recommendation" class="absolute top-2 right-2 z-30 text-white bg-neutral-900 border border-neutral-700 hover:bg-white hover:text-black w-8 h-8 flex items-center justify-center font-bold text-sm transition-colors cursor-pointer">
+            ✕
+          </button>
+          <div class="flex items-center gap-3 text-center sm:text-left pr-8">
+            <div class="h-10 w-10 bg-white text-black font-display font-black text-xl flex items-center justify-center flex-shrink-0">A</div>
+            <div>
+              <div class="font-bold text-white uppercase text-sm">Looking for Anime?</div>
+              <div class="text-neutral-400 text-[11px] mt-0.5">Explore our sister platform ${SISTER_SITE_NAME} for top trending anime, simulcasts & episode guides.</div>
+            </div>
+          </div>
+          <a href="${SISTER_SITE_URL}" target="_blank" rel="noopener" class="border border-white bg-white text-black font-bold px-6 py-2.5 uppercase tracking-wider hover:bg-neutral-200 transition-colors flex-shrink-0 min-touch-target flex items-center justify-center">
+            Visit ${SISTER_SITE_NAME} &rarr;
+          </a>
+        </div>
+      `;
+    }
+
+    function renderAnimeRedirectCardHTML(title) {
+      return `
+        <div class="border border-border bg-neutral-950 p-8 sm:p-12 text-center space-y-5 max-w-xl mx-auto my-12 font-mono">
+          <div class="text-5xl">⛩️</div>
+          <h2 class="text-xl sm:text-2xl font-bold text-white uppercase font-display">${title || 'This Title'} is an Anime</h2>
+          <p class="text-xs text-neutral-400 font-sans leading-relaxed">
+            CineStream is strictly dedicated to Movies & Western TV Shows. Anime content is exclusively hosted on our sister platform <strong>${SISTER_SITE_NAME}</strong>!
+          </p>
+          <a href="${SISTER_SITE_URL}" target="_blank" rel="noopener" class="inline-block border border-white bg-white text-black font-bold px-8 py-3.5 uppercase tracking-wider hover:bg-neutral-200 min-touch-target">
+            Watch on ${SISTER_SITE_NAME} &rarr;
+          </a>
+        </div>
+      `;
+    }
+
+    function scrollToTop() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function navigateTo(path) {
+      window.location.hash = path;
+      scrollToTop();
+    }
+
+    window.addEventListener('hashchange', handleRoute);
+    window.addEventListener('load', () => {
+      document.getElementById('sisterSitePromoContainer').innerHTML = renderSisterSitePromoHTML();
+      handleRoute();
+    });
+
+    function handleRoute() {
+      if (state.slideInterval) { clearInterval(state.slideInterval); state.slideInterval = null; }
+      if (state.commentPollInterval) { clearInterval(state.commentPollInterval); state.commentPollInterval = null; }
+      if (state.watchTimer) { clearTimeout(state.watchTimer); state.watchTimer = null; }
+
+      const fullHash = window.location.hash.slice(1) || '/';
+      const [hashPath, queryString] = fullHash.split('?');
+      const searchParams = new URLSearchParams(queryString || '');
+      const queryVal = searchParams.get('q') || '';
+
+      const isHomePage = (hashPath === '/' || hashPath === '');
+      const promoContainer = document.getElementById('sisterSitePromoContainer');
+      if (promoContainer) {
+        if (isHomePage) {
+          promoContainer.style.display = 'block';
+          promoContainer.innerHTML = renderSisterSitePromoHTML();
+        } else {
+          promoContainer.style.display = 'none';
+          promoContainer.innerHTML = '';
+        }
+      }
+
+      if (isHomePage) {
+        state.route = '/';
+        renderHome();
+      } else if (hashPath === '/movies') {
+        state.route = '/movies';
+        state.mediaType = 'movie';
+        state.page = parseInt(searchParams.get('page') || 1, 10);
+        state.query = queryVal;
+        state.genre = searchParams.get('genre') || 'All';
+        state.year = searchParams.get('year') || 'All';
+        renderCatalog('movie');
+      } else if (hashPath.startsWith('/movies/')) {
+        state.mediaId = hashPath.split('/')[2];
+        state.route = `/movies/${state.mediaId}`;
+        renderMovieDetail(state.mediaId);
+      } else if (hashPath === '/tv') {
+        state.route = '/tv';
+        state.mediaType = 'tv';
+        state.page = parseInt(searchParams.get('page') || 1, 10);
+        state.query = queryVal;
+        state.genre = searchParams.get('genre') || 'All';
+        state.year = searchParams.get('year') || 'All';
+        renderCatalog('tv');
+      } else if (hashPath.startsWith('/tv/')) {
+        state.mediaId = hashPath.split('/')[2];
+        state.route = `/tv/${state.mediaId}`;
+        renderTVDetail(state.mediaId);
+      } else if (hashPath === '/my-list') {
+        state.route = '/my-list';
+        renderMyList();
+      } else if (hashPath.startsWith('/watch/movie/')) {
+        state.mediaId = hashPath.split('/')[3];
+        state.route = `/watch/movie/${state.mediaId}`;
+        renderWatchMovie(state.mediaId);
+      } else if (hashPath.startsWith('/watch/tv/')) {
+        const parts = hashPath.split('/');
+        state.mediaId = parts[3];
+        state.seasonNum = Math.max(1, parseInt(parts[4] || 1, 10));
+        state.episodeNum = parseInt(parts[5] || 1, 10);
+        state.route = `/watch/tv/${state.mediaId}/${state.seasonNum}/${state.episodeNum}`;
+        renderWatchTV(state.mediaId, state.seasonNum, state.episodeNum);
+      }
+      scrollToTop();
+    }
+
+    function doSearch(val) {
+      if (!val) return;
+      navigateTo('/movies?q=' + encodeURIComponent(val));
+    }
+
+    async function triggerRandomMedia() {
+      try {
+        const isMovie = Math.random() > 0.5;
+        const res = await fetchWithRetry(API_BASE + (isMovie ? '/api/movies/trending' : '/api/tv/trending'));
+        if (res.data && res.data.length > 0) {
+          const item = res.data[Math.floor(Math.random() * res.data.length)];
+          navigateTo(isMovie ? '/movies/' + item.id : '/tv/' + item.id);
+        }
+      } catch(e){}
+    }
+
+    function renderMediaCardHTML(item) {
+      const isMovie = item.type === 'movie';
+      const detailLink = isMovie ? `#/movies/${item.id}` : `#/tv/${item.id}`;
+      const streamLink = isMovie ? `#/watch/movie/${item.id}` : `#/watch/tv/${item.id}/1/1`;
+
+      return `
+        <div class="group relative flex flex-col border border-border bg-surface hover:border-neutral-400 transition-all p-2 sm:p-3">
+          <a href="${detailLink}" class="relative aspect-[2/3] w-full overflow-hidden bg-neutral-900 block">
+            <img src="${item.posterPath || item.backdropPath || 'https://via.placeholder.com/500x750/121212/ffffff?text=No+Poster'}" alt="${item.title}" class="duotone-poster object-cover w-full h-full" />
+            <div class="absolute top-1.5 left-1.5 right-1.5 flex justify-between text-[9px] sm:text-[10px] font-mono font-bold">
+              <span class="bg-black/90 px-1.5 py-0.5 border border-neutral-700 text-white uppercase">${isMovie ? 'MOVIE' : 'TV SHOW'}</span>
+              <span class="bg-black/90 px-1.5 py-0.5 border border-amber-500/60 text-amber-400">${item.rating} ★</span>
+            </div>
+          </a>
+          <div class="p-2 sm:p-3 font-sans text-xs flex-1 flex flex-col justify-between space-y-2">
+            <a href="${detailLink}" class="font-bold text-white truncate block hover:underline text-xs sm:text-sm" title="${item.title}">${item.title}</a>
+            <div class="flex justify-between items-center text-[10px] sm:text-[11px] text-neutral-400 font-mono pt-2 border-t border-neutral-900">
+              <span>${item.year || 'N/A'}</span>
+              <a href="${streamLink}" class="text-white font-bold uppercase hover:underline">Watch &rarr;</a>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderHeroSlideshow(slides) {
+      if (!slides || slides.length === 0) return '';
+      state.heroSlides = slides;
+      state.currentSlide = 0;
+
+      return `
+        <div class="relative w-full overflow-hidden border border-neutral-800 mb-8 sm:mb-12 bg-neutral-950 min-h-[400px] sm:min-h-[500px] group max-w-full" id="heroSlideshowContainer">
+          ${slides.map((hero, idx) => {
+            const isMovie = hero.type === 'movie';
+            const detailLink = isMovie ? `#/movies/${hero.id}` : `#/tv/${hero.id}`;
+            const watchLink = isMovie ? `#/watch/movie/${hero.id}` : `#/watch/tv/${hero.id}/1/1`;
+
+            return `
+              <div id="heroSlide-${idx}" class="hero-slide-panel absolute inset-0 transition-opacity duration-700 ease-in-out p-4 sm:p-10 md:p-14 flex items-center max-w-full overflow-hidden ${idx === 0 ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}">
+                <div class="absolute inset-0 overflow-hidden">
+                  <img src="${hero.backdropPath || hero.posterPath}" class="w-full h-full object-cover opacity-50 scale-105" />
+                  <div class="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-black/30"></div>
+                  <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/40"></div>
+                </div>
+
+                <div class="relative z-10 max-w-7xl w-full mx-auto flex flex-col md:flex-row items-center gap-6 sm:gap-10">
+                  <a href="${detailLink}" class="hidden sm:block w-36 sm:w-48 md:w-56 aspect-[2/3] flex-shrink-0 border-2 border-white/20 shadow-2xl overflow-hidden bg-neutral-900 group-hover:border-white transition-all">
+                    <img src="${hero.posterPath || hero.backdropPath}" alt="${hero.title}" class="w-full h-full object-cover duotone-poster" />
+                  </a>
+
+                  <div class="flex-1 space-y-3 sm:space-y-4 text-left">
+                    <div class="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-xs font-mono flex-wrap">
+                      <span class="bg-white text-black font-bold px-2.5 py-0.5 uppercase">#${idx + 1} FEATURED</span>
+                      <span class="border border-neutral-700 bg-black/80 px-2 py-0.5 text-white uppercase">${isMovie ? 'FEATURE FILM' : 'TV SERIES'}</span>
+                      <span class="border border-amber-500/60 bg-black/80 px-2 py-0.5 text-amber-400 font-bold">${hero.rating} ★</span>
+                    </div>
+
+                    <h1 class="font-display font-black text-2xl sm:text-4xl md:text-6xl text-white uppercase tracking-tight line-clamp-2 leading-tight">${hero.title}</h1>
+                    <p class="text-xs sm:text-sm text-neutral-300 line-clamp-2 sm:line-clamp-3 font-sans leading-relaxed max-w-3xl">${hero.overview}</p>
+                    
+                    <div class="pt-3 flex items-center gap-3 sm:gap-4 flex-wrap">
+                      <a href="${watchLink}" class="inline-flex items-center gap-2 border border-white bg-white px-6 py-3 text-xs font-bold text-black uppercase tracking-wider hover:bg-neutral-200 shadow-lg min-touch-target justify-center">Watch Now</a>
+                      <a href="${detailLink}" class="inline-block border border-white/30 bg-black/80 px-5 py-3 text-xs font-mono text-white hover:border-white uppercase min-touch-target">Details</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+
+          <button onclick="changeHeroSlide(-1)" class="hidden sm:block absolute left-4 top-1/2 -translate-y-1/2 z-20 border border-white/30 bg-black/80 text-white hover:bg-white hover:text-black p-3 font-mono transition-colors opacity-0 group-hover:opacity-100">&larr;</button>
+          <button onclick="changeHeroSlide(1)" class="hidden sm:block absolute right-4 top-1/2 -translate-y-1/2 z-20 border border-white/30 bg-black/80 text-white hover:bg-white hover:text-black p-3 font-mono transition-colors opacity-0 group-hover:opacity-100">&rarr;</button>
+
+          <div class="absolute bottom-4 right-6 z-20 flex items-center gap-2 font-mono text-xs">
+            ${slides.map((_, idx) => `
+              <button onclick="goToHeroSlide(${idx})" id="heroDot-${idx}" class="h-2 transition-all duration-300 ${idx === 0 ? 'w-8 bg-white' : 'w-2 bg-neutral-600 hover:bg-neutral-400'}"></button>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function changeHeroSlide(dir) {
+      if (!state.heroSlides || state.heroSlides.length === 0) return;
+      let next = state.currentSlide + dir;
+      if (next < 0) next = state.heroSlides.length - 1;
+      if (next >= state.heroSlides.length) next = 0;
+      goToHeroSlide(next);
+    }
+
+    function goToHeroSlide(idx) {
+      if (!state.heroSlides || !state.heroSlides[idx]) return;
+      const prevIdx = state.currentSlide;
+      state.currentSlide = idx;
+
+      const prevPanel = document.getElementById('heroSlide-' + prevIdx);
+      const nextPanel = document.getElementById('heroSlide-' + idx);
+      const prevDot = document.getElementById('heroDot-' + prevIdx);
+      const nextDot = document.getElementById('heroDot-' + idx);
+
+      if (prevPanel) { prevPanel.classList.remove('opacity-100', 'z-10'); prevPanel.classList.add('opacity-0', 'z-0', 'pointer-events-none'); }
+      if (nextPanel) { nextPanel.classList.remove('opacity-0', 'z-0', 'pointer-events-none'); nextPanel.classList.add('opacity-100', 'z-10'); }
+
+      if (prevDot) prevDot.className = "h-2 w-2 bg-neutral-600 hover:bg-neutral-400 transition-all";
+      if (nextDot) nextDot.className = "h-2 w-8 bg-white transition-all";
+    }
+
+    function startHeroSlideshowAutoPlay() {
+      if (state.slideInterval) clearInterval(state.slideInterval);
+      state.slideInterval = setInterval(() => changeHeroSlide(1), 6000);
+    }
+
+    function renderContinueWatchingSectionHTML() {
+      const list = getContinueWatching();
+      if (!list || list.length === 0) return '';
+
+      return `
+        <section class="space-y-4">
+          <div class="flex justify-between items-center border-b border-border pb-3">
+            <h2 class="font-display font-bold text-lg sm:text-2xl uppercase tracking-wider text-white border-l-4 border-emerald-500 pl-4 flex items-center gap-2">
+              <span>Continue Watching</span>
+              <span class="text-xs font-mono text-emerald-400 font-normal">(${list.length})</span>
+            </h2>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-6">
+            ${list.map(item => {
+              const isMovie = item.type === 'movie';
+              const validSeason = Math.max(1, item.seasonNum || 1);
+              const resumeLink = isMovie ? `#/watch/movie/${item.id}` : `#/watch/tv/${item.id}/${validSeason}/${item.episodeNum || 1}`;
+              const progressLabel = isMovie ? 'MOVIE' : `S${validSeason} E${item.episodeNum || 1}`;
+
+              return `
+                <div class="group relative flex flex-col border border-emerald-900/60 bg-surface hover:border-emerald-500 transition-all p-2 sm:p-3">
+                  <button onclick="event.preventDefault(); event.stopPropagation(); removeFromContinueWatching('${item.id}', '${item.type}'); renderHome();" title="Remove from Continue Watching" class="absolute top-3 right-3 z-30 bg-black/90 text-neutral-400 hover:text-white border border-neutral-700 w-6 h-6 flex items-center justify-center font-bold text-xs">
+                    ✕
+                  </button>
+                  <a href="${resumeLink}" class="relative aspect-[2/3] w-full overflow-hidden bg-neutral-900 block">
+                    <img src="${item.posterPath || item.backdropPath || 'https://via.placeholder.com/500x750/121212/ffffff?text=No+Poster'}" alt="${item.title}" class="duotone-poster object-cover w-full h-full" />
+                    <div class="absolute top-1.5 left-1.5 flex text-[9px] sm:text-[10px] font-mono font-bold">
+                      <span class="bg-emerald-950/90 text-emerald-300 px-1.5 py-0.5 border border-emerald-700/60 uppercase">${progressLabel}</span>
+                    </div>
+                  </a>
+                  <div class="p-2 sm:p-3 font-sans text-xs flex-1 flex flex-col justify-between space-y-2">
+                    <a href="${resumeLink}" class="font-bold text-white truncate block hover:underline text-xs sm:text-sm" title="${item.title}">${item.title}</a>
+                    <div class="flex justify-between items-center text-[10px] sm:text-[11px] text-emerald-400 font-mono pt-2 border-t border-neutral-900">
+                      <span class="text-neutral-500">RESUME</span>
+                      <a href="${resumeLink}" class="text-emerald-400 font-bold uppercase hover:underline">Play &rarr;</a>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </section>
+      `;
+    }
+
+    async function renderHome() {
+      const app = document.getElementById('app');
+      app.innerHTML = `
+        <div class="text-center py-24 space-y-4 font-mono text-xs">
+          <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-white border-t-transparent"></div>
+          <div class="text-neutral-400 uppercase tracking-widest">Connecting to Live TMDB Proxy...</div>
+        </div>
+      `;
+
+      try {
+        const [trendingMovies, trendingTV, topMovies, topTV] = await Promise.all([
+          fetchWithRetry(`${API_BASE}/api/movies/trending`),
+          fetchWithRetry(`${API_BASE}/api/tv/trending`),
+          fetchWithRetry(`${API_BASE}/api/movies/top-rated`),
+          fetchWithRetry(`${API_BASE}/api/tv/top-rated`)
+        ]);
+
+        const heroSlides = [...(trendingMovies.data || []).slice(0, 5), ...(trendingTV.data || []).slice(0, 5)];
+
+        let html = renderHeroSlideshow(heroSlides);
+
+        // Continue Watching Section
+        html += renderContinueWatchingSectionHTML();
+
+        html += `
+          <!-- STRICTLY SEPARATED SECTION 1: TOP RATED MOVIES -->
+          <section class="space-y-6">
+            <div class="flex justify-between items-center border-b border-border pb-3">
+              <h2 class="font-display font-bold text-lg sm:text-2xl uppercase tracking-wider text-white border-l-4 border-white pl-4">Top Rated Movies</h2>
+              <a href="#/movies" class="font-mono text-xs text-neutral-400 hover:text-white uppercase">View Catalog &rarr;</a>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-6">
+              ${(topMovies.data || []).slice(0, 12).map(renderMediaCardHTML).join('')}
+            </div>
+          </section>
+
+          <!-- STRICTLY SEPARATED SECTION 2: TOP RATED TV SHOWS -->
+          <section class="space-y-6">
+            <div class="flex justify-between items-center border-b border-border pb-3">
+              <h2 class="font-display font-bold text-lg sm:text-2xl uppercase tracking-wider text-white border-l-4 border-white pl-4">Top Rated TV Shows</h2>
+              <a href="#/tv" class="font-mono text-xs text-neutral-400 hover:text-white uppercase">View Catalog &rarr;</a>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-6">
+              ${(topTV.data || []).slice(0, 12).map(renderMediaCardHTML).join('')}
+            </div>
+          </section>
+        `;
+
+        app.innerHTML = html;
+        startHeroSlideshowAutoPlay();
+      } catch (e) {
+        app.innerHTML = `
+          <div class="text-center py-20 space-y-4 font-mono text-xs">
+            <div class="text-neutral-400 uppercase">Server connection initializing...</div>
+            <button onclick="renderHome()" class="border border-white bg-white text-black font-bold px-6 py-2.5 uppercase">Retry Connection</button>
+          </div>
+        `;
+      }
+    }
+
+    async function renderCatalog(type = 'movie') {
+      const app = document.getElementById('app');
+      state.mediaType = type;
+      const isMovie = type === 'movie';
+
+      app.innerHTML = `
+        <div class="space-y-8">
+          <div class="border-b border-border pb-4 flex justify-between items-center flex-wrap gap-4">
+            <h1 class="font-display font-bold text-xl sm:text-3xl uppercase tracking-wider">${isMovie ? 'Movies Catalog' : 'TV Shows Catalog'}</h1>
+            <div class="flex border border-border bg-surface text-xs font-mono">
+              <button onclick="state.mediaType='movie'; state.page=1; renderCatalog('movie');" class="px-4 py-2 uppercase ${isMovie ? 'bg-white text-black font-bold' : 'text-neutral-400 hover:text-white'}">Movies</button>
+              <button onclick="state.mediaType='tv'; state.page=1; renderCatalog('tv');" class="px-4 py-2 uppercase ${!isMovie ? 'bg-white text-black font-bold' : 'text-neutral-400 hover:text-white'}">TV Shows</button>
+            </div>
+          </div>
+
+          <div class="space-y-4 border border-border bg-surface p-4 sm:p-6 font-mono text-xs">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block mb-1 text-neutral-400 uppercase text-[10px]">Genre</label>
+                <select id="genreFilter" onchange="state.genre=this.value; state.page=1; fetchCatalogResults();" class="w-full border border-border bg-black p-2.5 text-white">
+                  <option value="All">All Genres</option>
+                  <option value="28">Action</option>
+                  <option value="12">Adventure</option>
+                  <option value="16">Animation</option>
+                  <option value="35">Comedy</option>
+                  <option value="80">Crime</option>
+                  <option value="99">Documentary</option>
+                  <option value="18">Drama</option>
+                  <option value="10751">Family</option>
+                  <option value="14">Fantasy</option>
+                  <option value="36">History</option>
+                  <option value="27">Horror</option>
+                  <option value="9648">Mystery</option>
+                  <option value="10749">Romance</option>
+                  <option value="878">Sci-Fi</option>
+                  <option value="53">Thriller</option>
+                </select>
+              </div>
+              <div>
+                <label class="block mb-1 text-neutral-400 uppercase text-[10px]">Release Year</label>
+                <input type="number" id="yearFilter" placeholder="e.g. 2024" onchange="state.year=this.value; state.page=1; fetchCatalogResults();" class="w-full border border-border bg-black p-2.5 text-white" />
+              </div>
+              <div>
+                <label class="block mb-1 text-neutral-400 uppercase text-[10px]">Search Title</label>
+                <input type="text" id="searchInput" value="${state.query}" placeholder="Search title..." onkeydown="if(event.key==='Enter'){ state.query=this.value; state.page=1; fetchCatalogResults(); }" class="w-full border border-border bg-black p-2.5 text-white" />
+              </div>
+            </div>
+          </div>
+
+          <div id="catalogGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-6"></div>
+
+          <div id="catalogPagination" class="flex justify-center gap-4 pt-6 font-mono text-xs border-t border-neutral-900">
+            ${state.page > 1 ? `<button onclick="state.page--; fetchCatalogResults();" class="border border-border bg-surface px-6 py-2 text-white hover:border-white uppercase">&larr; Previous</button>` : ''}
+            <span class="px-4 py-2 border border-border bg-black text-neutral-400">Page ${state.page}</span>
+            <button onclick="state.page++; fetchCatalogResults();" class="border border-white bg-white text-black font-bold px-6 py-2 uppercase hover:bg-neutral-200">Next Page &rarr;</button>
+          </div>
+        </div>
+      `;
+      fetchCatalogResults();
+    }
+
+    async function fetchCatalogResults() {
+      const grid = document.getElementById('catalogGrid');
+      if (!grid) return;
+      grid.innerHTML = '<div class="col-span-full text-center py-16 font-mono text-xs text-neutral-400">Loading catalog items...</div>';
+
+      try {
+        const endpoint = state.mediaType === 'movie' ? '/api/movies/search' : '/api/tv/search';
+        const params = new URLSearchParams();
+        if (state.query) params.set('q', state.query);
+        if (state.genre !== 'All') params.set('genre', state.genre);
+        if (state.year !== 'All' && state.year) params.set('year', state.year);
+        params.set('page', state.page);
+
+        const res = await fetchWithRetry(`${API_BASE}${endpoint}?${params.toString()}`);
+        if (res.data && res.data.length > 0) {
+          grid.innerHTML = res.data.map(renderMediaCardHTML).join('');
+        } else {
+          grid.innerHTML = '<div class="col-span-full text-center py-16 font-mono text-xs text-neutral-500 uppercase">No results found</div>';
+        }
+      } catch (e) {
+        grid.innerHTML = '<div class="col-span-full text-center py-16 font-mono text-xs text-neutral-500">Error loading catalog</div>';
+      }
+    }
+
+    /* Vibrant Golden Star Rating Renderer */
+    function renderStarRatingHTML(mediaObj, currentRating = 0) {
+      return `
+        <div class="flex items-center gap-1 font-mono text-base">
+          ${[1,2,3,4,5].map(star => `
+            <button onclick="rateMediaObj('${mediaObj.id}', '${mediaObj.type}', '${encodeURIComponent(mediaObj.title || '')}', '${encodeURIComponent(mediaObj.posterPath || '')}', '${mediaObj.year || ''}', ${star})" title="Rate ${star} Stars" class="hover:scale-125 transition-transform min-touch-target p-1 flex items-center justify-center ${star <= currentRating ? 'text-amber-400 font-bold text-lg drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]' : 'text-neutral-700 hover:text-amber-200'}">
+              ★
+            </button>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function rateMediaObj(id, type, titleEnc, posterPathEnc, year, stars) {
+      const title = decodeURIComponent(titleEnc);
+      const posterPath = decodeURIComponent(posterPathEnc);
+      saveToMyList({ id, type, title, posterPath, year, rating: stars });
+      handleRoute();
+    }
+
+    async function renderMovieDetail(id) {
+      const app = document.getElementById('app');
+      app.innerHTML = '<div class="text-center py-24 font-mono text-xs text-neutral-400 uppercase">Loading movie details...</div>';
+
+      try {
+        const [res, initialComments] = await Promise.all([
+          fetchWithRetry(`${API_BASE}/api/movies/${id}`),
+          fetchCommentsFromAPI(`movie_${id}`)
+        ]);
+
+        const movie = res.data;
+        if (!movie) { app.innerHTML = '<div class="text-center py-20 font-mono text-xs text-neutral-400">Movie not found.</div>'; return; }
+
+        if (movie.isAnime) {
+          app.innerHTML = renderAnimeRedirectCardHTML(movie.title);
+          return;
+        }
+
+        const savedItem = getMyList().find(i => String(i.id) === String(movie.id) && i.type === 'movie');
+        const userRating = savedItem ? savedItem.rating : 0;
+
+        let html = `
+          <div class="space-y-10">
+            <div class="relative border-b border-border bg-neutral-950 p-4 sm:p-8 md:p-12 flex flex-col md:flex-row gap-6 sm:gap-10">
+              <div class="w-44 sm:w-56 aspect-[2/3] border-2 border-border overflow-hidden bg-neutral-900 flex-shrink-0 mx-auto md:mx-0">
+                <img src="${movie.posterPath || movie.backdropPath}" class="w-full h-full object-cover duotone-poster" />
+              </div>
+
+              <div class="space-y-4 flex-1">
+                <div class="flex gap-3 text-xs font-mono flex-wrap items-center">
+                  <span class="bg-white text-black font-bold px-2.5 py-0.5 uppercase">FEATURE FILM</span>
+                  <span class="border border-amber-500/60 bg-surface px-2.5 py-0.5 text-amber-400 font-bold">${movie.rating} ★</span>
+                  <span class="border border-neutral-800 bg-surface px-2.5 py-0.5 text-neutral-400">${movie.runtime || 'N/A'}</span>
+                  <span class="border border-neutral-800 bg-surface px-2.5 py-0.5 text-neutral-400">${movie.year}</span>
+                </div>
+
+                <h1 class="font-display font-black text-2xl sm:text-4xl md:text-5xl uppercase text-white">${movie.title}</h1>
+                <p class="text-xs sm:text-sm text-neutral-300 font-sans max-w-3xl leading-relaxed">${movie.overview}</p>
+                
+                <div class="pt-2 font-mono text-xs text-neutral-400">
+                  <span class="uppercase text-[10px] block text-neutral-500 mb-1">Your Personal Rating:</span>
+                  ${renderStarRatingHTML(movie, userRating)}
+                </div>
+
+                <div class="pt-4 flex gap-4 flex-wrap">
+                  <a href="#/watch/movie/${movie.id}" class="inline-block border border-white bg-white px-8 py-3 text-xs font-bold text-black uppercase min-touch-target flex items-center justify-center">Watch Movie</a>
+                  ${movie.videos && movie.videos.length > 0 ? `
+                    <button onclick="openTrailerModal('${movie.videos[0].key}')" class="border border-border bg-surface px-6 py-3 text-xs font-bold text-white uppercase hover:border-white min-touch-target">Watch Trailer 🎬</button>
+                  ` : ''}
+                </div>
+              </div>
+            </div>
+
+            <!-- Cast Grid -->
+            ${movie.cast && movie.cast.length > 0 ? `
+              <div class="space-y-4">
+                <h3 class="font-display font-bold text-sm uppercase tracking-wider text-white border-l-2 border-white pl-3">Main Cast</h3>
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                  ${movie.cast.map(c => `
+                    <div class="border border-border bg-surface p-3 text-xs flex items-center gap-3">
+                      <img src="${c.profilePath || 'https://via.placeholder.com/150/121212/ffffff?text=Actor'}" class="w-10 h-10 object-cover border border-neutral-800 rounded-full" />
+                      <div class="truncate">
+                        <div class="font-bold text-white truncate">${c.name}</div>
+                        <div class="font-mono text-[10px] text-neutral-500 truncate">${c.character}</div>
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
+
+            <!-- Comments Section -->
+            ${renderCommentsSectionHTML(`movie_${movie.id}`, initialComments)}
+          </div>
+        `;
+        app.innerHTML = html;
+      } catch (e) {
+        app.innerHTML = '<div class="text-center py-20 font-mono text-xs text-neutral-400">Error loading movie details.</div>';
+      }
+    }
+
+    async function renderTVDetail(id) {
+      const app = document.getElementById('app');
+      app.innerHTML = '<div class="text-center py-24 font-mono text-xs text-neutral-400 uppercase">Loading TV show details...</div>';
+
+      try {
+        const [res, initialComments] = await Promise.all([
+          fetchWithRetry(`${API_BASE}/api/tv/${id}`),
+          fetchCommentsFromAPI(`tv_${id}_s1_e1`)
+        ]);
+
+        const tv = res.data;
+        if (!tv) { app.innerHTML = '<div class="text-center py-20 font-mono text-xs text-neutral-400">TV show not found.</div>'; return; }
+
+        if (tv.isAnime) {
+          app.innerHTML = renderAnimeRedirectCardHTML(tv.title);
+          return;
+        }
+
+        const savedItem = getMyList().find(i => String(i.id) === String(tv.id) && i.type === 'tv');
+        const userRating = savedItem ? savedItem.rating : 0;
+        const mainSeasons = (tv.seasons || []).filter(s => s.seasonNumber > 0);
+        const firstSeasonNum = mainSeasons.length > 0 ? mainSeasons[0].seasonNumber : 1;
+
+        let html = `
+          <div class="space-y-10">
+            <div class="relative border-b border-border bg-neutral-950 p-4 sm:p-8 md:p-12 flex flex-col md:flex-row gap-6 sm:gap-10">
+              <div class="w-44 sm:w-56 aspect-[2/3] border-2 border-border overflow-hidden bg-neutral-900 flex-shrink-0 mx-auto md:mx-0">
+                <img src="${tv.posterPath || tv.backdropPath}" class="w-full h-full object-cover duotone-poster" />
+              </div>
+
+              <div class="space-y-4 flex-1">
+                <div class="flex gap-3 text-xs font-mono flex-wrap items-center">
+                  <span class="bg-white text-black font-bold px-2.5 py-0.5 uppercase">TV SERIES</span>
+                  <span class="border border-amber-500/60 bg-surface px-2.5 py-0.5 text-amber-400 font-bold">${tv.rating} ★</span>
+                  <span class="border border-neutral-800 bg-surface px-2.5 py-0.5 text-neutral-400">${mainSeasons.length} SEASONS</span>
+                  <span class="border border-neutral-800 bg-surface px-2.5 py-0.5 text-neutral-400">${tv.year}</span>
+                </div>
+
+                <h1 class="font-display font-black text-2xl sm:text-4xl md:text-5xl uppercase text-white">${tv.title}</h1>
+                <p class="text-xs sm:text-sm text-neutral-300 font-sans max-w-3xl leading-relaxed">${tv.overview}</p>
+                
+                <div class="pt-2 font-mono text-xs text-neutral-400">
+                  <span class="uppercase text-[10px] block text-neutral-500 mb-1">Your Personal Rating:</span>
+                  ${renderStarRatingHTML(tv, userRating)}
+                </div>
+
+                <div class="pt-4 flex gap-4 flex-wrap">
+                  <a href="#/watch/tv/${tv.id}/${firstSeasonNum}/1" class="inline-block border border-white bg-white px-8 py-3 text-xs font-bold text-black uppercase min-touch-target flex items-center justify-center">Stream Season ${firstSeasonNum} Ep 1</a>
+                </div>
+              </div>
+            </div>
+
+            <!-- Season & Episode Selector -->
+            <div class="space-y-6 border-t border-border pt-6">
+              <div class="flex justify-between items-center flex-wrap gap-4 font-mono text-xs">
+                <h3 class="font-display font-bold text-sm uppercase tracking-wider text-white border-l-2 border-white pl-3">Seasons & Episodes</h3>
+                <div class="flex items-center gap-2">
+                  <span class="text-neutral-400 uppercase text-[11px]">Select Season:</span>
+                  <select id="seasonSelect" onchange="loadEpisodesForSeason('${tv.id}', this.value)" class="border border-border bg-surface px-3 py-2 text-white font-mono focus:border-white">
+                    ${mainSeasons.map(s => `<option value="${s.seasonNumber}">Season ${s.seasonNumber} (${s.episodeCount} Episodes)</option>`).join('')}
+                  </select>
+                </div>
+              </div>
+
+              <div id="episodesGridContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 font-mono text-xs"></div>
+            </div>
+
+            <!-- Comments Section -->
+            ${renderCommentsSectionHTML(`tv_${tv.id}_s1_e1`, initialComments)}
+          </div>
+        `;
+        app.innerHTML = html;
+        loadEpisodesForSeason(tv.id, firstSeasonNum);
+      } catch (e) {
+        app.innerHTML = '<div class="text-center py-20 font-mono text-xs text-neutral-400">Error loading TV show details.</div>';
+      }
+    }
+
+    async function loadEpisodesForSeason(tvId, seasonNum, currentEp = 1) {
+      const container = document.getElementById('episodesGridContainer');
+      if (!container) return;
+      container.innerHTML = '<div class="col-span-full text-center py-8 text-neutral-500">Loading season episodes...</div>';
+
+      const validSeason = Math.max(1, parseInt(seasonNum || 1, 10));
+
+      try {
+        const res = await fetchWithRetry(`${API_BASE}/api/tv/${tvId}/season/${validSeason}`);
+        if (res.data && res.data.length > 0) {
+          container.innerHTML = res.data.map(e => {
+            const isCurrent = e.episodeNumber == currentEp;
+            const isWatched = isEpisodeWatched(tvId, validSeason, e.episodeNumber);
+
+            let btnStyle = 'border-border bg-surface text-neutral-300 hover:border-white';
+            let statusLabel = `<div class="text-[10px] text-amber-400/80 font-mono border-t border-neutral-900 pt-1">${e.voteAverage} ★</div>`;
+
+            if (isCurrent) {
+              btnStyle = 'border-white bg-white text-black font-bold shadow-lg';
+              statusLabel = `<div class="text-[10px] text-neutral-900 font-mono font-bold border-t border-neutral-300 pt-1">NOW PLAYING</div>`;
+            } else if (isWatched) {
+              /* Solid filled green for watched episodes (matching AniStream) */
+              btnStyle = 'bg-emerald-600 border-emerald-500 text-black font-bold shadow-md hover:bg-emerald-500';
+              statusLabel = `<div class="text-[10px] text-black/80 font-mono font-bold border-t border-emerald-700/40 pt-1">✓ WATCHED</div>`;
+            }
+
+            return `
+              <a href="#/watch/tv/${tvId}/${validSeason}/${e.episodeNumber}" onclick="markEpisodeAsWatched('${tvId}', ${validSeason}, ${currentEp})" class="border ${btnStyle} p-3 flex flex-col justify-between space-y-2 group min-touch-target">
+                <div class="font-bold flex items-center justify-between">
+                  <span>EP ${e.episodeNumber}</span>
+                  ${isWatched && !isCurrent ? '<span class="text-xs">✓</span>' : ''}
+                </div>
+                <div class="text-[11px] truncate opacity-90">${e.name}</div>
+                ${statusLabel}
+              </a>
+            `;
+          }).join('');
+        } else {
+          container.innerHTML = '<div class="col-span-full text-center py-8 text-neutral-500">No episode data available.</div>';
+        }
+      } catch (e) {
+        container.innerHTML = '<div class="col-span-full text-center py-8 text-neutral-500">Error loading episodes.</div>';
+      }
+    }
+
+    function switchServer(srvId) {
+      state.server = srvId;
+      if (state.route.startsWith('/watch/movie/')) {
+        renderWatchMovie(state.mediaId);
+      } else if (state.route.startsWith('/watch/tv/')) {
+        renderWatchTV(state.mediaId, state.seasonNum, state.episodeNum);
+      }
+    }
+
+    function switchAudio(aud) {
+      state.audio = aud;
+      if (state.route.startsWith('/watch/movie/')) {
+        renderWatchMovie(state.mediaId);
+      } else if (state.route.startsWith('/watch/tv/')) {
+        renderWatchTV(state.mediaId, state.seasonNum, state.episodeNum);
+      }
+    }
+
+    function handleServerFailover() {
+      const idx = EMBED_PROVIDERS.findIndex(p => p.id === state.server);
+      if (idx >= 0 && idx < EMBED_PROVIDERS.length - 1) {
+        state.server = EMBED_PROVIDERS[idx + 1].id;
+        if (state.route.startsWith('/watch/movie/')) {
+          renderWatchMovie(state.mediaId);
+        } else if (state.route.startsWith('/watch/tv/')) {
+          renderWatchTV(state.mediaId, state.seasonNum, state.episodeNum);
+        }
+      }
+    }
+
+    async function renderWatchMovie(id) {
+      const app = document.getElementById('app');
+      state.route = `/watch/movie/${id}`;
+      state.mediaId = id;
+
+      app.innerHTML = '<div class="text-center py-24 font-mono text-xs text-neutral-400 uppercase">Loading movie stream...</div>';
+
+      try {
+        const [res, initialComments] = await Promise.all([
+          fetchWithRetry(`${API_BASE}/api/movies/${id}`),
+          fetchCommentsFromAPI(`movie_${id}`)
+        ]);
+
+        const movie = res.data;
+        if (!movie) { app.innerHTML = '<div class="text-center py-20 font-mono text-xs text-neutral-400">Movie not found.</div>'; return; }
+
+        if (movie.isAnime) {
+          app.innerHTML = renderAnimeRedirectCardHTML(movie.title);
+          return;
+        }
+
+        // Save to Continue Watching
+        saveContinueWatching({
+          id: movie.id,
+          type: 'movie',
+          title: movie.title,
+          posterPath: movie.posterPath,
+          backdropPath: movie.backdropPath
+        });
+
+        const provider = EMBED_PROVIDERS.find(p => p.id === state.server) || EMBED_PROVIDERS[0];
+        const streamUrl = provider.getMovieUrl(movie.id);
+
+        let html = `
+          <div class="space-y-6">
+            <div class="flex items-center justify-between border-b border-border pb-4 font-mono text-xs flex-wrap gap-2">
+              <div>
+                <a href="#/movies/${movie.id}" class="text-neutral-400 hover:text-white">&larr; Back to Details</a>
+                <h1 class="font-display font-black text-base sm:text-xl text-white uppercase mt-1">${movie.title} &mdash; MOVIE PLAYER</h1>
+              </div>
+            </div>
+
+            <!-- Video Player Area -->
+            <div class="relative aspect-video w-full bg-black border border-border overflow-hidden">
+              <iframe id="streamIframe" src="${streamUrl}" class="w-full h-full border-0" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen onerror="handleServerFailover()"></iframe>
+            </div>
+
+            <!-- Server Switcher Toolbar -->
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 border border-border bg-surface p-4 text-xs font-mono">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-neutral-400 uppercase text-[11px]">Server:</span>
+                ${EMBED_PROVIDERS.map(p => `
+                  <button onclick="switchServer('${p.id}')" class="h-8 px-3 border ${state.server === p.id ? 'border-white bg-white text-black font-bold' : 'border-border bg-black text-neutral-400 hover:border-neutral-500 hover:text-white'} min-touch-target flex items-center justify-center">${p.name}</button>
+                `).join('')}
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-neutral-400 uppercase text-[11px]">Audio:</span>
+                <button onclick="switchAudio('sub')" class="px-3 py-1.5 border ${state.audio === 'sub' ? 'bg-white text-black font-bold' : 'border-border bg-black text-neutral-400'} min-touch-target">ORIGINAL + SUB</button>
+                <button onclick="switchAudio('dub')" class="px-3 py-1.5 border ${state.audio === 'dub' ? 'bg-white text-black font-bold' : 'border-border bg-black text-neutral-400'} min-touch-target">ENGLISH DUB</button>
+              </div>
+            </div>
+
+            <!-- Scoped Movie Comments -->
+            ${renderCommentsSectionHTML(`movie_${movie.id}`, initialComments)}
+          </div>
+        `;
+        app.innerHTML = html;
+      } catch (e) {
+        app.innerHTML = '<div class="text-center py-20 font-mono text-xs text-neutral-400">Error loading stream.</div>';
+      }
+    }
+
+    async function renderWatchTV(id, season, ep) {
+      const app = document.getElementById('app');
+      const validSeason = Math.max(1, parseInt(season || 1, 10));
+
+      state.route = `/watch/tv/${id}/${validSeason}/${ep}`;
+      state.mediaId = id;
+      state.seasonNum = validSeason;
+      state.episodeNum = ep;
+
+      app.innerHTML = '<div class="text-center py-24 font-mono text-xs text-neutral-400 uppercase">Loading TV stream...</div>';
+
+      try {
+        const [res, initialComments] = await Promise.all([
+          fetchWithRetry(`${API_BASE}/api/tv/${id}`),
+          fetchCommentsFromAPI(`tv_${id}_s${validSeason}_e${ep}`)
+        ]);
+
+        const tv = res.data;
+        if (!tv) { app.innerHTML = '<div class="text-center py-20 font-mono text-xs text-neutral-400">TV show not found.</div>'; return; }
+
+        if (tv.isAnime) {
+          app.innerHTML = renderAnimeRedirectCardHTML(tv.title);
+          return;
+        }
+
+        const mainSeasons = (tv.seasons || []).filter(s => s.seasonNumber > 0);
+
+        // Save to Continue Watching
+        saveContinueWatching({
+          id: tv.id,
+          type: 'tv',
+          title: tv.title,
+          posterPath: tv.posterPath,
+          backdropPath: tv.backdropPath,
+          seasonNum: validSeason,
+          episodeNum: ep
+        });
+
+        // Schedule marking episode as watched AFTER 10 seconds of watching
+        if (state.watchTimer) clearTimeout(state.watchTimer);
+        state.watchTimer = setTimeout(() => {
+          markEpisodeAsWatched(tv.id, validSeason, ep);
+          const btn = document.getElementById('watchedIndicatorBtn');
+          if (btn) {
+            btn.className = "bg-emerald-600 text-black border border-emerald-500 px-3 py-1 text-[11px] font-mono font-bold flex items-center gap-1";
+            btn.innerHTML = "✓ WATCHED";
+          }
+        }, 10000);
+
+        const provider = EMBED_PROVIDERS.find(p => p.id === state.server) || EMBED_PROVIDERS[0];
+        const streamUrl = provider.getTvUrl(tv.id, validSeason, ep);
+
+        const currentSeasonData = (tv.seasons || []).find(s => s.seasonNumber == validSeason);
+        const maxEpisodesInSeason = currentSeasonData ? currentSeasonData.episodeCount : 24;
+        const alreadyWatched = isEpisodeWatched(tv.id, validSeason, ep);
+
+        let html = `
+          <div class="space-y-6">
+            <!-- Episode Navigation Header -->
+            <div class="flex items-center justify-between border-b border-border pb-4 font-mono text-xs flex-wrap gap-2">
+              <div>
+                <a href="#/tv/${tv.id}" class="text-neutral-400 hover:text-white">&larr; Back to Show Details</a>
+                <h1 class="font-display font-black text-base sm:text-xl text-white uppercase mt-1 flex items-center gap-3">
+                  <span>${tv.title} &mdash; S${validSeason} EP ${ep}</span>
+                  <button id="watchedIndicatorBtn" onclick="markEpisodeAsWatched('${tv.id}', ${validSeason}, ${ep}); this.className='bg-emerald-600 text-black border border-emerald-500 px-3 py-1 text-[11px] font-mono font-bold flex items-center gap-1'; this.innerHTML='✓ WATCHED';" class="${alreadyWatched ? 'bg-emerald-600 text-black border border-emerald-500' : 'bg-neutral-900 text-neutral-400 border border-neutral-700 hover:text-white'} px-3 py-1 text-[11px] font-mono font-bold flex items-center gap-1 transition-all cursor-pointer">
+                    ${alreadyWatched ? '✓ WATCHED' : '+ Mark Watched'}
+                  </button>
+                </h1>
+              </div>
+              <div class="flex gap-2">
+                ${ep > 1 ? `<a href="#/watch/tv/${tv.id}/${validSeason}/${ep-1}" onclick="markEpisodeAsWatched('${tv.id}', ${validSeason}, ${ep})" class="border border-border bg-surface px-4 py-2 text-white hover:border-white min-touch-target flex items-center justify-center">PREV</a>` : ''}
+                ${ep < maxEpisodesInSeason ? `<a href="#/watch/tv/${tv.id}/${validSeason}/${ep+1}" onclick="markEpisodeAsWatched('${tv.id}', ${validSeason}, ${ep})" class="border border-white bg-white text-black font-bold px-4 py-2 min-touch-target flex items-center justify-center">NEXT</a>` : ''}
+              </div>
+            </div>
+
+            <!-- Video Player Area -->
+            <div class="relative aspect-video w-full bg-black border border-border overflow-hidden">
+              <iframe id="streamIframe" src="${streamUrl}" class="w-full h-full border-0" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen onerror="handleServerFailover()"></iframe>
+            </div>
+
+            <!-- Server & Audio Switcher Toolbar -->
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 border border-border bg-surface p-4 text-xs font-mono">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-neutral-400 uppercase text-[11px]">Server:</span>
+                ${EMBED_PROVIDERS.map(p => `
+                  <button onclick="switchServer('${p.id}')" class="h-8 px-3 border ${state.server === p.id ? 'border-white bg-white text-black font-bold' : 'border-border bg-black text-neutral-400 hover:border-neutral-500 hover:text-white'} min-touch-target flex items-center justify-center">${p.name}</button>
+                `).join('')}
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-neutral-400 uppercase text-[11px]">Audio:</span>
+                <button onclick="switchAudio('sub')" class="px-3 py-1.5 border ${state.audio === 'sub' ? 'bg-white text-black font-bold' : 'border-border bg-black text-neutral-400'} min-touch-target">SUB</button>
+                <button onclick="switchAudio('dub')" class="px-3 py-1.5 border ${state.audio === 'dub' ? 'bg-white text-black font-bold' : 'border-border bg-black text-neutral-400'} min-touch-target">DUB</button>
+              </div>
+            </div>
+
+            <!-- Seasons & Episode Selector Grid -->
+            <div class="space-y-4 border-t border-border pt-6">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 font-mono text-xs">
+                <h3 class="font-display font-bold text-sm uppercase tracking-wider text-white border-l-2 border-white pl-3">Season ${validSeason} Episodes</h3>
+                <div class="flex items-center gap-2">
+                  <span class="text-neutral-400 uppercase text-[11px]">Select Season:</span>
+                  <select onchange="if(this.value) { markEpisodeAsWatched('${tv.id}', ${validSeason}, ${ep}); navigateTo('/watch/tv/${tv.id}/' + this.value + '/1'); }" class="border border-border bg-surface px-3 py-1.5 text-xs text-white focus:border-white focus:outline-none font-mono">
+                    ${mainSeasons.map(s => `<option value="${s.seasonNumber}" ${s.seasonNumber == validSeason ? 'selected' : ''}>Season ${s.seasonNumber} (${s.episodeCount} Ep)</option>`).join('')}
+                  </select>
+                </div>
+              </div>
+
+              <div id="episodesGridContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 font-mono text-xs"></div>
+            </div>
+
+            <!-- Scoped Episode Comments -->
+            ${renderCommentsSectionHTML(`tv_${tv.id}_s${validSeason}_e${ep}`, initialComments)}
+          </div>
+        `;
+        app.innerHTML = html;
+        loadEpisodesForSeason(tv.id, validSeason, ep);
+      } catch (e) {
+        app.innerHTML = '<div class="text-center py-20 font-mono text-xs text-neutral-400">Error loading stream.</div>';
+      }
+    }
+
+    function renderMyList() {
+      const app = document.getElementById('app');
+      state.route = '/my-list';
+      const list = getMyList();
+      const movies = list.filter(i => i.type === 'movie');
+      const tvShows = list.filter(i => i.type === 'tv');
+
+      let html = `
+        <div class="space-y-10">
+          <div class="border-b border-border pb-4 flex justify-between items-center">
+            <h1 class="font-display font-bold text-xl sm:text-3xl uppercase tracking-wider">My List & Star Ratings</h1>
+            <div class="font-mono text-xs text-neutral-400">${list.length} Items Saved</div>
+          </div>
+
+          <div class="space-y-8">
+            <div class="space-y-4">
+              <h2 class="font-display font-bold text-lg uppercase tracking-wider text-white border-l-4 border-white pl-3">Saved Movies (${movies.length})</h2>
+              ${movies.length > 0 ? `
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  ${movies.map(item => `
+                    <div class="border border-border bg-surface p-4 flex gap-4">
+                      <div class="w-20 aspect-[2/3] bg-neutral-900 border border-neutral-800 flex-shrink-0 overflow-hidden">
+                        <a href="#/movies/${item.id}"><img src="${item.posterPath || 'https://via.placeholder.com/150/121212/ffffff?text=No+Poster'}" class="w-full h-full object-cover duotone-poster" /></a>
+                      </div>
+                      <div class="flex-1 flex flex-col justify-between text-xs space-y-2">
+                        <div>
+                          <a href="#/movies/${item.id}" class="font-bold text-white hover:underline block truncate">${item.title || 'Movie #' + item.id}</a>
+                          <span class="font-mono text-[10px] text-neutral-400 uppercase">Movie &bull; ${item.year || ''}</span>
+                        </div>
+                        <div>
+                          <span class="font-mono text-[10px] text-neutral-500 uppercase block mb-1">Your Rating:</span>
+                          ${renderStarRatingHTML(item, item.rating)}
+                        </div>
+                        <div class="pt-2 border-t border-neutral-900 flex justify-between items-center font-mono text-[10px]">
+                          <a href="#/watch/movie/${item.id}" class="text-white font-bold uppercase hover:underline">Stream</a>
+                          <button onclick="removeFromMyList('${item.id}', 'movie'); renderMyList();" class="text-neutral-400 hover:text-white uppercase">Remove</button>
+                        </div>
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              ` : '<div class="border border-border bg-surface p-8 text-center text-xs font-mono text-neutral-500 uppercase">No movies rated or saved yet.</div>'}
+            </div>
+
+            <div class="space-y-4">
+              <h2 class="font-display font-bold text-lg uppercase tracking-wider text-white border-l-4 border-white pl-3">Saved TV Shows (${tvShows.length})</h2>
+              ${tvShows.length > 0 ? `
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  ${tvShows.map(item => `
+                    <div class="border border-border bg-surface p-4 flex gap-4">
+                      <div class="w-20 aspect-[2/3] bg-neutral-900 border border-neutral-800 flex-shrink-0 overflow-hidden">
+                        <a href="#/tv/${item.id}"><img src="${item.posterPath || 'https://via.placeholder.com/150/121212/ffffff?text=No+Poster'}" class="w-full h-full object-cover duotone-poster" /></a>
+                      </div>
+                      <div class="flex-1 flex flex-col justify-between text-xs space-y-2">
+                        <div>
+                          <a href="#/tv/${item.id}" class="font-bold text-white hover:underline block truncate">${item.title || 'TV Show #' + item.id}</a>
+                          <span class="font-mono text-[10px] text-neutral-400 uppercase">TV Show &bull; ${item.year || ''}</span>
+                        </div>
+                        <div>
+                          <span class="font-mono text-[10px] text-neutral-500 uppercase block mb-1">Your Rating:</span>
+                          ${renderStarRatingHTML(item, item.rating)}
+                        </div>
+                        <div class="pt-2 border-t border-neutral-900 flex justify-between items-center font-mono text-[10px]">
+                          <a href="#/watch/tv/${item.id}/1/1" class="text-white font-bold uppercase hover:underline">Stream</a>
+                          <button onclick="removeFromMyList('${item.id}', 'tv'); renderMyList();" class="text-neutral-400 hover:text-white uppercase">Remove</button>
+                        </div>
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              ` : '<div class="border border-border bg-surface p-8 text-center text-xs font-mono text-neutral-500 uppercase">No TV shows rated or saved yet.</div>'}
+            </div>
+          </div>
+        </div>
+      `;
+      app.innerHTML = html;
+    }
+
+    async function refreshCommentsSection(targetKey) {
+      const container = document.getElementById('commentsListContainer');
+      if (!container) return;
+      const list = await fetchCommentsFromAPI(targetKey);
+      container.innerHTML = renderCommentsListHTML(list, targetKey);
+    }
+
+    function toggleReplyForm(commentId) {
+      const form = document.getElementById('replyForm-' + commentId);
+      if (form) form.classList.toggle('hidden');
+    }
+
+    function toggleSpoilerText(commentId) {
+      const text = document.getElementById('spoilerText-' + commentId);
+      const btn = document.getElementById('spoilerBtn-' + commentId);
+      if (text && btn) {
+        text.classList.remove('blur-sm', 'select-none');
+        btn.classList.add('hidden');
+      }
+    }
+
+    function renderSingleCommentCard(c, allComments, targetKey) {
+      const replies = allComments.filter(r => r.parentId === c.id);
+
+      return `
+        <div class="border border-border bg-surface p-4 space-y-2.5 text-xs font-sans">
+          <div class="flex justify-between items-center font-mono text-neutral-400 text-[11px]">
+            <span class="text-white font-bold flex items-center gap-2">
+              <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+              ${c.username || 'Anonymous'}
+            </span>
+            <span class="text-[10px] text-neutral-500">${new Date(c.timestamp).toLocaleString()}</span>
+          </div>
+
+          ${c.isSpoiler ? `
+            <div class="relative bg-black/60 p-3 border border-red-950/80 my-1">
+              <button id="spoilerBtn-${c.id}" onclick="toggleSpoilerText('${c.id}')" class="w-full text-center py-2 font-mono text-xs font-bold text-red-400 uppercase tracking-wider hover:underline">
+                ⚠️ SPOILER WARNING &mdash; CLICK TO REVEAL
+              </button>
+              <p id="spoilerText-${c.id}" class="text-neutral-300 blur-sm select-none transition-all leading-relaxed">${c.text}</p>
+            </div>
+          ` : `
+            <p class="text-neutral-300 leading-relaxed">${c.text}</p>
+          `}
+
+          <div class="flex items-center gap-4 pt-2 border-t border-neutral-900 font-mono text-[11px]">
+            <button onclick="voteCommentOnAPI('${c.id}', 'like', '${targetKey}')" class="text-neutral-400 hover:text-white flex items-center gap-1 min-touch-target">
+              <span>👍</span> <span>${c.likes || 0}</span>
+            </button>
+            <button onclick="voteCommentOnAPI('${c.id}', 'dislike', '${targetKey}')" class="text-neutral-400 hover:text-white flex items-center gap-1 min-touch-target">
+              <span>👎</span> <span>${c.dislikes || 0}</span>
+            </button>
+            <button onclick="toggleReplyForm('${c.id}')" class="text-neutral-400 hover:text-white uppercase font-bold text-[10px] min-touch-target flex items-center">
+              💬 Reply
+            </button>
+          </div>
+
+          <div id="replyForm-${c.id}" class="hidden pt-3 space-y-2 border-t border-neutral-900">
+            <input type="text" id="replyUser-${c.id}" placeholder="Your Name" class="w-full border border-border bg-black p-2 text-xs text-white font-mono focus:border-white focus:outline-none" />
+            <textarea id="replyText-${c.id}" rows="2" placeholder="Write a reply..." class="w-full border border-border bg-black p-2 text-xs text-white font-sans focus:border-white focus:outline-none"></textarea>
+            <div class="flex justify-end gap-2">
+              <button onclick="toggleReplyForm('${c.id}')" class="border border-neutral-800 bg-black text-neutral-400 px-3 py-1 text-[10px] font-mono uppercase min-touch-target">Cancel</button>
+              <button onclick="handlePostReply('${targetKey}', '${c.id}')" class="border border-white bg-white text-black font-bold px-4 py-1 text-[10px] font-mono uppercase min-touch-target">Post Reply</button>
+            </div>
+          </div>
+
+          ${replies.length > 0 ? `
+            <div class="pl-4 sm:pl-6 border-l-2 border-neutral-800 space-y-2.5 mt-3 pt-2">
+              ${replies.map(r => renderSingleCommentCard(r, allComments, targetKey)).join('')}
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    function renderCommentsListHTML(list, targetKey) {
+      if (!list || list.length === 0) {
+        return '<div class="border border-border bg-surface p-6 text-center text-xs font-mono text-neutral-500 uppercase">No comments yet. Be the first to start the discussion!</div>';
+      }
+      const topLevel = list.filter(c => !c.parentId);
+      return topLevel.map(c => renderSingleCommentCard(c, list, targetKey)).join('');
+    }
+
+    function renderCommentsSectionHTML(targetKey, initialComments = []) {
+      return `
+        <div class="space-y-6 border-t border-border pt-8">
+          <div class="flex justify-between items-center font-mono">
+            <h3 class="font-display font-bold text-sm uppercase tracking-wider text-white border-l-2 border-white pl-3">Community Discussion</h3>
+            <span class="text-[10px] text-emerald-400 flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span> Live Sync</span>
+          </div>
+
+          <div class="border border-border bg-surface p-4 sm:p-5 space-y-3">
+            <input type="text" id="commentUser" placeholder="Your Name / Handle" class="w-full border border-border bg-black p-2.5 text-xs text-white font-mono focus:border-white focus:outline-none" />
+            <textarea id="commentText" rows="3" placeholder="Share your review or reaction... (Keep spoilers tagged!)" class="w-full border border-border bg-black p-3 text-xs text-white font-sans focus:border-white focus:outline-none"></textarea>
+            <div class="flex justify-between items-center flex-wrap gap-2">
+              <label class="flex items-center gap-2 font-mono text-xs text-neutral-400 cursor-pointer">
+                <input type="checkbox" id="commentSpoiler" class="accent-white" />
+                <span>Contains Spoilers</span>
+              </label>
+              <button onclick="handlePostComment('${targetKey}')" class="border border-white bg-white text-black font-bold px-6 py-2.5 text-xs font-mono uppercase hover:bg-neutral-200 min-touch-target">Post Comment</button>
+            </div>
+          </div>
+
+          <div id="commentsListContainer" class="space-y-3">
+            ${renderCommentsListHTML(initialComments, targetKey)}
+          </div>
+        </div>
+      `;
+    }
+
+    async function handlePostComment(targetKey) {
+      const user = document.getElementById('commentUser').value;
+      const text = document.getElementById('commentText').value;
+      const isSpoiler = document.getElementById('commentSpoiler')?.checked || false;
+      if (!text.trim()) return;
+
+      const success = await submitCommentToAPI(targetKey, user, text, null, isSpoiler);
+      if (success) {
+        document.getElementById('commentText').value = '';
+        if (document.getElementById('commentSpoiler')) document.getElementById('commentSpoiler').checked = false;
+        refreshCommentsSection(targetKey);
+      }
+    }
+
+    async function handlePostReply(targetKey, parentId) {
+      const user = document.getElementById('replyUser-' + parentId).value;
+      const text = document.getElementById('replyText-' + parentId).value;
+      if (!text.trim()) return;
+
+      const success = await submitCommentToAPI(targetKey, user, text, parentId, false);
+      if (success) {
+        refreshCommentsSection(targetKey);
+      }
+    }
+
+    function openTrailerModal(youtubeKey) {
+      const modal = document.createElement('div');
+      modal.className = "fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4";
+      modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+      modal.innerHTML = `
+        <div class="relative w-full max-w-4xl aspect-video bg-black border border-neutral-800">
+          <button onclick="this.closest('.fixed').remove()" class="absolute -top-10 right-0 text-white font-mono text-sm uppercase hover:underline">&times; Close Trailer</button>
+          <iframe src="https://www.youtube.com/embed/${youtubeKey}?autoplay=1" class="w-full h-full border-0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    // Automated 14-min keep-alive ping
+    setInterval(() => {
+      fetch(API_BASE + '/api/keepalive').catch(() => {});
+    }, 840000);
+  </script>
+</body>
+</html>
